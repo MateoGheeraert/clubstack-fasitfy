@@ -20,7 +20,7 @@ export const updateTaskStatusSchema = {
     properties: {
         status: {
             type: "string",
-            enum: ["pending", "in_progress", "completed", "cancelled"]
+            enum: ["pending", "in_progress", "completed", "cancelled"],
         },
     },
 };

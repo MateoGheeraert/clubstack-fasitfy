@@ -5,11 +5,11 @@ export default async function taskRoutes(fastify) {
     const taskService = new TaskService(fastify.prisma);
     // Create a new task (Admin only)
     fastify.post("/", {
-        preHandler: [
-            fastify.authenticate,
-            fastify.authorize([Role.ADMIN]),
-        ],
+        preHandler: [fastify.authenticate, fastify.authorize([Role.ADMIN])],
         schema: {
+            tags: ["tasks"],
+            security: [{ bearerAuth: [] }],
+            summary: "Create a new task (Admin only)",
             body: createTaskSchema,
         },
     }, async (request, reply) => {
@@ -29,6 +29,9 @@ export default async function taskRoutes(fastify) {
     fastify.get("/", {
         preHandler: [fastify.authenticate],
         schema: {
+            tags: ["tasks"],
+            security: [{ bearerAuth: [] }],
+            summary: "Get all tasks with filters",
             querystring: getTasksQuerySchema,
         },
     }, async (request, reply) => {
@@ -45,6 +48,9 @@ export default async function taskRoutes(fastify) {
     fastify.get("/my", {
         preHandler: [fastify.authenticate],
         schema: {
+            tags: ["tasks"],
+            security: [{ bearerAuth: [] }],
+            summary: "Get current user's tasks",
             querystring: {
                 type: "object",
                 properties: {
@@ -64,6 +70,9 @@ export default async function taskRoutes(fastify) {
     fastify.get("/:id", {
         preHandler: [fastify.authenticate],
         schema: {
+            tags: ["tasks"],
+            security: [{ bearerAuth: [] }],
+            summary: "Get task by ID",
             params: taskParamsSchema,
         },
     }, async (request, reply) => {
@@ -73,7 +82,9 @@ export default async function taskRoutes(fastify) {
             const task = await taskService.getTaskById(id);
             // Check if user can view this task (admin or assigned user)
             if (user.role !== Role.ADMIN && task.userId !== user.id) {
-                return reply.code(403).send({ error: "You can only view your own tasks" });
+                return reply
+                    .code(403)
+                    .send({ error: "You can only view your own tasks" });
             }
             reply.send(task);
         }
@@ -88,6 +99,9 @@ export default async function taskRoutes(fastify) {
     fastify.patch("/:id", {
         preHandler: [fastify.authenticate],
         schema: {
+            tags: ["tasks"],
+            security: [{ bearerAuth: [] }],
+            summary: "Update task details",
             params: taskParamsSchema,
             body: updateTaskSchema,
         },
@@ -104,7 +118,9 @@ export default async function taskRoutes(fastify) {
                 return reply.code(404).send({ error: "Task not found" });
             }
             if (error.message === "UNAUTHORIZED") {
-                return reply.code(403).send({ error: "You can only update your own tasks or admin tasks" });
+                return reply.code(403).send({
+                    error: "You can only update your own tasks or admin tasks",
+                });
             }
             throw error;
         }
@@ -113,6 +129,9 @@ export default async function taskRoutes(fastify) {
     fastify.patch("/:id/status", {
         preHandler: [fastify.authenticate],
         schema: {
+            tags: ["tasks"],
+            security: [{ bearerAuth: [] }],
+            summary: "Update task status",
             params: taskParamsSchema,
             body: updateTaskStatusSchema,
         },
@@ -129,18 +148,20 @@ export default async function taskRoutes(fastify) {
                 return reply.code(404).send({ error: "Task not found" });
             }
             if (error.message === "UNAUTHORIZED") {
-                return reply.code(403).send({ error: "You can only update status of your own tasks" });
+                return reply
+                    .code(403)
+                    .send({ error: "You can only update status of your own tasks" });
             }
             throw error;
         }
     });
     // Assign task to user (Admin only)
     fastify.patch("/:id/assign", {
-        preHandler: [
-            fastify.authenticate,
-            fastify.authorize([Role.ADMIN]),
-        ],
+        preHandler: [fastify.authenticate, fastify.authorize([Role.ADMIN])],
         schema: {
+            tags: ["tasks"],
+            security: [{ bearerAuth: [] }],
+            summary: "Assign task to user (Admin only)",
             params: taskParamsSchema,
             body: assignTaskSchema,
         },
@@ -160,7 +181,9 @@ export default async function taskRoutes(fastify) {
                 return reply.code(400).send({ error: "User not found" });
             }
             if (error.message === "UNAUTHORIZED") {
-                return reply.code(403).send({ error: "Only admins can assign tasks" });
+                return reply
+                    .code(403)
+                    .send({ error: "Only admins can assign tasks" });
             }
             throw error;
         }
@@ -169,6 +192,9 @@ export default async function taskRoutes(fastify) {
     fastify.delete("/:id", {
         preHandler: [fastify.authenticate],
         schema: {
+            tags: ["tasks"],
+            security: [{ bearerAuth: [] }],
+            summary: "Delete task",
             params: taskParamsSchema,
         },
     }, async (request, reply) => {
@@ -183,7 +209,9 @@ export default async function taskRoutes(fastify) {
                 return reply.code(404).send({ error: "Task not found" });
             }
             if (error.message === "UNAUTHORIZED") {
-                return reply.code(403).send({ error: "You can only delete your own tasks" });
+                return reply
+                    .code(403)
+                    .send({ error: "You can only delete your own tasks" });
             }
             throw error;
         }

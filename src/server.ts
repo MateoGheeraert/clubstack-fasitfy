@@ -12,6 +12,10 @@ import authRoutes from "./routes/authentication/auth.routes";
 import adminRoutes from "./routes/admin/admin.routes";
 import userRoutes from "./routes/user/user.routes";
 import taskRoutes from "./routes/task/task.routes";
+import accountRoutes from "./routes/account/account.routes";
+import organizationRoutes from "./routes/organization/organization.routes";
+import transactionRoutes from "./routes/transaction/transaction.routes";
+import activityRoutes from "./routes/activity/activity.routes";
 
 async function buildApp() {
   const app = Fastify({ logger: true });
@@ -44,6 +48,10 @@ async function buildApp() {
   await app.register(userRoutes, { prefix: "/user" });
   await app.register(adminRoutes, { prefix: "/admin" });
   await app.register(taskRoutes, { prefix: "/tasks" });
+  await app.register(accountRoutes, { prefix: "/accounts" });
+  await app.register(organizationRoutes, { prefix: "/organizations" });
+  await app.register(transactionRoutes, { prefix: "/transactions" });
+  await app.register(activityRoutes, { prefix: "/activities" });
 
   app.get("/", async () => ({ ok: true }));
   return app;
