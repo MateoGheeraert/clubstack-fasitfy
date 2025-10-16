@@ -60,7 +60,7 @@ async function buildApp() {
 async function start() {
   try {
     const app = await buildApp();
-    const port = Number(process.env.PORT || 3000);
+    const port = Number(process.env.PORT || 8000);
     await app.listen({ port, host: "0.0.0.0" });
   } catch (err) {
     // If err is thrown before app exists, fallback to console

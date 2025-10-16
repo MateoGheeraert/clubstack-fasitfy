@@ -27,13 +27,8 @@ export class AccountService {
       throw new Error("ORGANIZATION_NOT_FOUND");
     }
 
-    // Check if organization already has an account (one-to-one relationship)
-    const existingAccount = await this.accountModel.findByOrganizationId(
-      data.organizationId
-    );
-    if (existingAccount) {
-      throw new Error("ORGANIZATION_ALREADY_HAS_ACCOUNT");
-    }
+    // Note: Organizations can now have multiple accounts
+    // No need to check for existing accounts anymore
 
     return this.accountModel.create(data);
   }
@@ -121,6 +116,8 @@ export class AccountService {
     requesterId: string,
     requesterRole: Role
   ) {
+    console.log("DEBUG: getAccountByOrganization called", { organizationId, requesterId, requesterRole });
+    
     // Check if user has access to this organization
     if (requesterRole !== "ADMIN") {
       const userOrganization = await this.prisma.userOrganization.findFirst({
@@ -129,19 +126,21 @@ export class AccountService {
           organizationId,
         },
       });
+      console.log("DEBUG: userOrganization found:", userOrganization);
       if (!userOrganization) {
         throw new Error("UNAUTHORIZED");
       }
     }
 
-    const account = await this.accountModel.findByOrganizationId(
+    const accounts = await this.accountModel.findByOrganizationId(
       organizationId
     );
-    if (!account) {
-      throw new Error("ACCOUNT_NOT_FOUND");
+    console.log("DEBUG: accounts found:", accounts);
+    if (!accounts || accounts.length === 0) {
+      throw new Error("ACCOUNTS_NOT_FOUND");
     }
 
-    return account;
+    return accounts;
   }
 
   async updateAccount(

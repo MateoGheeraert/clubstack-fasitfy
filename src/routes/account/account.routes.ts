@@ -185,15 +185,16 @@ export default async function accountRoutes(fastify: FastifyInstance) {
         const { organizationId } = request.params as { organizationId: string };
         const user = request.user as { id: string; role: Role };
 
-        const account = await accountService.getAccountByOrganization(
+        const accounts = await accountService.getAccountByOrganization(
           organizationId,
           user.id,
           user.role
         );
-        reply.send(account);
+        console.log("DEBUG: About to send accounts:", JSON.stringify(accounts, null, 2));
+        reply.send(accounts);
       } catch (error: any) {
-        if (error.message === "ACCOUNT_NOT_FOUND") {
-          return reply.code(404).send({ error: "Account not found" });
+        if (error.message === "ACCOUNTS_NOT_FOUND") {
+          return reply.code(404).send({ error: "No accounts found for this organization" });
         }
         if (error.message === "UNAUTHORIZED") {
           return reply.code(403).send({ error: "Access denied" });

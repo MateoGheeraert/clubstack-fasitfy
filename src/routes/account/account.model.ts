@@ -76,15 +76,11 @@ export class AccountModel {
   }
 
   async findByOrganizationId(organizationId: string) {
-    return this.prisma.account.findUnique({
+    return this.prisma.account.findMany({
       where: { organizationId },
       include: {
         organization: {
           select: { id: true, name: true },
-        },
-        Transaction: {
-          orderBy: { createdAt: "desc" },
-          take: 10,
         },
         _count: {
           select: {
@@ -143,8 +139,8 @@ export class AccountModel {
   }
 
   async findMany(filters: AccountFilters) {
-    const { organizationId, type, accountName, page = 1, limit = 10 } = filters;
-    const skip = (page - 1) * limit;
+    const { organizationId, type, accountName, page = 1, limit } = filters;
+    const skip = (page - 1) * (limit || 10);
 
     const where: any = {};
     if (organizationId) where.organizationId = organizationId;
@@ -160,14 +156,10 @@ export class AccountModel {
       this.prisma.account.findMany({
         where,
         skip,
-        take: limit,
+        take: limit || undefined, // Fetch all if limit is not provided
         include: {
           organization: {
             select: { id: true, name: true },
-          },
-          Transaction: {
-            orderBy: { createdAt: "desc" },
-            take: 5,
           },
           _count: {
             select: {
