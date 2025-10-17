@@ -116,8 +116,12 @@ export class AccountService {
     requesterId: string,
     requesterRole: Role
   ) {
-    console.log("DEBUG: getAccountByOrganization called", { organizationId, requesterId, requesterRole });
-    
+    console.log("DEBUG: getAccountByOrganization called", {
+      organizationId,
+      requesterId,
+      requesterRole,
+    });
+
     // Check if user has access to this organization
     if (requesterRole !== "ADMIN") {
       const userOrganization = await this.prisma.userOrganization.findFirst({

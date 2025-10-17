@@ -185,11 +185,12 @@ export class OrganizationModel {
   }
 
   async getUserOrganizations(userId: string) {
-    return this.prisma.userOrganization.findMany({
+    const userOrganizations = await this.prisma.userOrganization.findMany({
       where: { userId },
       include: {
         organization: true,
       },
     });
+    return userOrganizations.map((uo) => uo.organization);
   }
 }

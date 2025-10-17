@@ -174,7 +174,10 @@ export default async function accountRoutes(fastify: FastifyInstance) {
         summary: "Get account by organization ID",
         params: organizationAccountParamsSchema,
         response: {
-          200: accountResponseSchema,
+          200: {
+            type: "array",
+            items: accountResponseSchema,
+          },
           403: errorResponseSchema,
           404: errorResponseSchema,
         },
@@ -190,11 +193,16 @@ export default async function accountRoutes(fastify: FastifyInstance) {
           user.id,
           user.role
         );
-        console.log("DEBUG: About to send accounts:", JSON.stringify(accounts, null, 2));
+        console.log(
+          "DEBUG: About to send accounts:",
+          JSON.stringify(accounts, null, 2)
+        );
         reply.send(accounts);
       } catch (error: any) {
         if (error.message === "ACCOUNTS_NOT_FOUND") {
-          return reply.code(404).send({ error: "No accounts found for this organization" });
+          return reply
+            .code(404)
+            .send({ error: "No accounts found for this organization" });
         }
         if (error.message === "UNAUTHORIZED") {
           return reply.code(403).send({ error: "Access denied" });
@@ -290,11 +298,9 @@ export default async function accountRoutes(fastify: FastifyInstance) {
           return reply.code(404).send({ error: "Account not found" });
         }
         if (error.message === "ACCOUNT_HAS_TRANSACTIONS") {
-          return reply
-            .code(400)
-            .send({
-              error: "Cannot delete account with existing transactions",
-            });
+          return reply.code(400).send({
+            error: "Cannot delete account with existing transactions",
+          });
         }
         if (error.message === "UNAUTHORIZED") {
           return reply.code(403).send({ error: "Access denied" });
