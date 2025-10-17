@@ -7,11 +7,25 @@ export default fp(async (fastify) => {
     secret: process.env.JWT_SECRET!,
     sign: { expiresIn: "15m" },
   });
+
+  // Add a helper to generate refresh tokens
+  fastify.decorate(
+    "generateRefreshToken",
+    (payload: { id: string; role: Role }) => {
+      return fastify.jwt.sign(payload, { expiresIn: "7d" });
+    }
+  );
 });
 
 declare module "@fastify/jwt" {
   interface FastifyJWT {
     payload: { id: string; role: Role }; // for signing
     user: { id: string; role: Role }; // after verify
+  }
+}
+
+declare module "fastify" {
+  interface FastifyInstance {
+    generateRefreshToken: (payload: { id: string; role: Role }) => string;
   }
 }

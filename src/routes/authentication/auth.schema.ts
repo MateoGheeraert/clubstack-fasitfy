@@ -7,6 +7,14 @@ export const authBodySchema = {
   },
 };
 
+export const refreshBodySchema = {
+  type: "object",
+  required: ["refreshToken"],
+  properties: {
+    refreshToken: { type: "string" },
+  },
+};
+
 export const authRegisterResponse = {
   201: {
     type: "object",
@@ -25,9 +33,32 @@ export const authRegisterResponse = {
 export const authLoginResponse = {
   200: {
     type: "object",
-    properties: { token: { type: "string" } },
+    properties: {
+      token: { type: "string" },
+      refreshToken: { type: "string" },
+    },
   },
   401: {
+    type: "object",
+    properties: { message: { type: "string" } },
+  },
+};
+
+export const authRefreshResponse = {
+  200: {
+    type: "object",
+    properties: {
+      token: { type: "string" },
+    },
+  },
+  401: {
+    type: "object",
+    properties: { message: { type: "string" } },
+  },
+};
+
+export const authLogoutResponse = {
+  200: {
     type: "object",
     properties: { message: { type: "string" } },
   },
