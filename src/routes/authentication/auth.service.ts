@@ -12,7 +12,7 @@ export class AuthService {
       const user = await this.prisma.user.create({
         data: { email, passwordHash },
       });
-      return { id: user.id, email: user.email, role: user.role };
+      return { id: user.id, email: user.email };
     } catch (e: any) {
       if (e.code === "P2002") {
         throw new Error("EMAIL_EXISTS");
@@ -33,7 +33,8 @@ export class AuthService {
     const ok = await compare(password, user.passwordHash);
     if (!ok) throw new Error("INVALID_CREDENTIALS");
 
-    const payload = { id: user.id, role: user.role };
+    // No longer include role in JWT since it's per-organization
+    const payload = { id: user.id };
     const token = sign(payload);
     const refreshToken = await this.createRefreshToken(
       user.id,
@@ -99,8 +100,8 @@ export class AuthService {
       throw new Error("REFRESH_TOKEN_EXPIRED");
     }
 
-    // Generate new access token
-    const payload = { id: storedToken.user.id, role: storedToken.user.role };
+    // Generate new access token (no role since it's per-organization)
+    const payload = { id: storedToken.user.id };
     const newAccessToken = sign(payload);
 
     return { token: newAccessToken };

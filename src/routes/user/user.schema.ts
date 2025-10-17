@@ -3,7 +3,6 @@ export const userResponseSchema = {
   properties: {
     id: { type: "string" },
     email: { type: "string" },
-    role: { type: "string" },
   },
 };
 
@@ -12,7 +11,6 @@ export const userProfileResponseSchema = {
   properties: {
     id: { type: "string" },
     email: { type: "string" },
-    role: { type: "string" },
     createdAt: { type: "string", format: "date-time" },
     updatedAt: { type: "string", format: "date-time" },
     organizations: {
@@ -21,6 +19,7 @@ export const userProfileResponseSchema = {
         type: "object",
         properties: {
           id: { type: "string" },
+          role: { type: "string" },
           joinedAt: { type: "string", format: "date-time" },
           organization: {
             type: "object",

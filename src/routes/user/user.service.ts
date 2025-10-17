@@ -11,7 +11,7 @@ export class UserService {
   async getProfile(userId: string) {
     const user = await this.userModel.findById(userId);
     if (!user) throw new Error("User not found");
-    return { id: user.id, email: user.email, role: user.role };
+    return { id: user.id, email: user.email };
   }
 
   async getProfileWithOrganizations(userId: string) {
@@ -47,11 +47,11 @@ export class UserService {
     return {
       id: user.id,
       email: user.email,
-      role: user.role,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
       organizations: user.organizations.map((uo) => ({
         id: uo.id,
+        role: uo.role,
         joinedAt: uo.createdAt,
         organization: uo.organization,
       })),

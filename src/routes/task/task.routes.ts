@@ -13,15 +13,15 @@ import {
 export default async function taskRoutes(fastify: FastifyInstance) {
   const taskService = new TaskService(fastify.prisma);
 
-  // Create a new task (Admin only)
+  // Create a new task (Admin or Moderator in organization)
   fastify.post(
     "/",
     {
-      preHandler: [fastify.authenticate, fastify.authorize([Role.ADMIN])],
+      preHandler: [fastify.authenticate],
       schema: {
         tags: ["tasks"],
         security: [{ bearerAuth: [] }],
-        summary: "Create a new task (Admin only)",
+        summary: "Create a new task (Admin/Moderator in organization)",
         body: createTaskSchema,
       },
     },
@@ -31,13 +31,39 @@ export default async function taskRoutes(fastify: FastifyInstance) {
           title: string;
           description?: string;
           userId: string;
+          organizationId: string;
         };
+        const user = request.user as { id: string };
+
+        // Check if requester is admin/moderator in the organization
+        const userOrg = await fastify.prisma.userOrganization.findUnique({
+          where: {
+            userId_organizationId: {
+              userId: user.id,
+              organizationId: body.organizationId,
+            },
+          },
+        });
+
+        if (
+          !userOrg ||
+          (userOrg.role !== "ADMIN" && userOrg.role !== "MODERATOR")
+        ) {
+          return reply
+            .code(403)
+            .send({ error: "Only admins and moderators can create tasks" });
+        }
 
         const task = await taskService.createTask(body);
         reply.code(201).send(task);
       } catch (error: any) {
-        if (error.message === "USER_NOT_FOUND") {
-          return reply.code(400).send({ error: "User not found" });
+        if (error.message === "ORGANIZATION_NOT_FOUND") {
+          return reply.code(404).send({ error: "Organization not found" });
+        }
+        if (error.message === "USER_NOT_IN_ORGANIZATION") {
+          return reply
+            .code(400)
+            .send({ error: "User is not a member of this organization" });
         }
         throw error;
       }
@@ -57,20 +83,16 @@ export default async function taskRoutes(fastify: FastifyInstance) {
       },
     },
     async (request, reply) => {
-      const user = request.user as { id: string; role: Role };
+      const user = request.user as { id: string };
       const query = request.query as {
         status?: string;
         userId?: string;
+        organizationId?: string;
         page?: number;
         limit?: number;
       };
 
-      // If not admin, force userId to be the current user
-      if (user.role !== Role.ADMIN) {
-        query.userId = user.id;
-      }
-
-      const result = await taskService.getTasks(query);
+      const result = await taskService.getTasks(query, user.id);
       reply.send(result);
     }
   );
@@ -95,15 +117,95 @@ export default async function taskRoutes(fastify: FastifyInstance) {
       },
     },
     async (request, reply) => {
-      const user = request.user as { id: string; role: Role };
-      const query = request.query as {
+      const user = request.user as { id: string };
+      const filters = request.query as {
         status?: string;
+        organizationId?: string;
         page?: number;
         limit?: number;
       };
 
-      const result = await taskService.getMyTasks(user.id, query);
+      const result = await taskService.getMyTasks(user.id, filters);
       reply.send(result);
+    }
+  );
+
+  // Get all tasks for an organization (with optional user filter)
+  fastify.get(
+    "/organization/:organizationId",
+    {
+      preHandler: [fastify.authenticate],
+      schema: {
+        tags: ["tasks"],
+        security: [{ bearerAuth: [] }],
+        summary:
+          "Get all tasks for an organization (optionally filtered by user)",
+        params: {
+          type: "object",
+          required: ["organizationId"],
+          properties: {
+            organizationId: { type: "string" },
+          },
+        },
+        querystring: {
+          type: "object",
+          properties: {
+            userId: { type: "string" },
+            status: { type: "string" },
+            page: { type: "integer", minimum: 1, default: 1 },
+            limit: { type: "integer", minimum: 1, maximum: 100, default: 10 },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      try {
+        const { organizationId } = request.params as { organizationId: string };
+        const user = request.user as { id: string };
+        const filters = request.query as {
+          userId?: string;
+          status?: string;
+          page?: number;
+          limit?: number;
+        };
+
+        // Check if user is a member of this organization
+        const userOrg = await fastify.prisma.userOrganization.findUnique({
+          where: {
+            userId_organizationId: {
+              userId: user.id,
+              organizationId: organizationId,
+            },
+          },
+        });
+
+        if (!userOrg) {
+          return reply.code(403).send({
+            error: "You don't have access to this organization",
+          });
+        }
+
+        // Get tasks for this organization with optional user filter
+        const result = await taskService.getTasks(
+          {
+            organizationId,
+            userId: filters.userId,
+            status: filters.status,
+            page: filters.page,
+            limit: filters.limit,
+          },
+          user.id
+        );
+
+        reply.send(result);
+      } catch (error: any) {
+        if (error.message === "UNAUTHORIZED") {
+          return reply.code(403).send({
+            error: "You don't have access to this organization",
+          });
+        }
+        throw error;
+      }
     }
   );
 
@@ -122,21 +224,18 @@ export default async function taskRoutes(fastify: FastifyInstance) {
     async (request, reply) => {
       try {
         const { id } = request.params as { id: string };
-        const user = request.user as { id: string; role: Role };
+        const user = request.user as { id: string };
 
-        const task = await taskService.getTaskById(id);
-
-        // Check if user can view this task (admin or assigned user)
-        if (user.role !== Role.ADMIN && task.userId !== user.id) {
-          return reply
-            .code(403)
-            .send({ error: "You can only view your own tasks" });
-        }
-
+        const task = await taskService.getTaskById(id, user.id);
         reply.send(task);
       } catch (error: any) {
         if (error.message === "TASK_NOT_FOUND") {
           return reply.code(404).send({ error: "Task not found" });
+        }
+        if (error.message === "UNAUTHORIZED") {
+          return reply
+            .code(403)
+            .send({ error: "You don't have access to this task" });
         }
         throw error;
       }
@@ -163,9 +262,9 @@ export default async function taskRoutes(fastify: FastifyInstance) {
           title?: string;
           description?: string;
         };
-        const user = request.user as { id: string; role: Role };
+        const user = request.user as { id: string };
 
-        const task = await taskService.updateTask(id, body, user.id, user.role);
+        const task = await taskService.updateTask(id, body, user.id);
         reply.send(task);
       } catch (error: any) {
         if (error.message === "TASK_NOT_FOUND") {
@@ -173,7 +272,8 @@ export default async function taskRoutes(fastify: FastifyInstance) {
         }
         if (error.message === "UNAUTHORIZED") {
           return reply.code(403).send({
-            error: "You can only update your own tasks or admin tasks",
+            error:
+              "You can only update your own tasks or must be an admin/moderator",
           });
         }
         throw error;
@@ -198,14 +298,9 @@ export default async function taskRoutes(fastify: FastifyInstance) {
       try {
         const { id } = request.params as { id: string };
         const { status } = request.body as { status: string };
-        const user = request.user as { id: string; role: Role };
+        const user = request.user as { id: string };
 
-        const task = await taskService.updateTaskStatus(
-          id,
-          status,
-          user.id,
-          user.role
-        );
+        const task = await taskService.updateTaskStatus(id, status, user.id);
         reply.send(task);
       } catch (error: any) {
         if (error.message === "TASK_NOT_FOUND") {
@@ -214,22 +309,25 @@ export default async function taskRoutes(fastify: FastifyInstance) {
         if (error.message === "UNAUTHORIZED") {
           return reply
             .code(403)
-            .send({ error: "You can only update status of your own tasks" });
+            .send({
+              error:
+                "You can only update status of your own tasks or must be an admin/moderator",
+            });
         }
         throw error;
       }
     }
   );
 
-  // Assign task to user (Admin only)
+  // Assign task to user (Admin/Moderator in organization)
   fastify.patch(
     "/:id/assign",
     {
-      preHandler: [fastify.authenticate, fastify.authorize([Role.ADMIN])],
+      preHandler: [fastify.authenticate],
       schema: {
         tags: ["tasks"],
         security: [{ bearerAuth: [] }],
-        summary: "Assign task to user (Admin only)",
+        summary: "Assign task to user (Admin/Moderator in organization)",
         params: taskParamsSchema,
         body: assignTaskSchema,
       },
@@ -238,26 +336,23 @@ export default async function taskRoutes(fastify: FastifyInstance) {
       try {
         const { id } = request.params as { id: string };
         const { userId } = request.body as { userId: string };
-        const user = request.user as { id: string; role: Role };
+        const user = request.user as { id: string };
 
-        const task = await taskService.assignTask(
-          id,
-          userId,
-          user.id,
-          user.role
-        );
+        const task = await taskService.assignTask(id, userId, user.id);
         reply.send(task);
       } catch (error: any) {
         if (error.message === "TASK_NOT_FOUND") {
           return reply.code(404).send({ error: "Task not found" });
         }
-        if (error.message === "USER_NOT_FOUND") {
-          return reply.code(400).send({ error: "User not found" });
+        if (error.message === "USER_NOT_IN_ORGANIZATION") {
+          return reply
+            .code(400)
+            .send({ error: "User is not in the organization" });
         }
         if (error.message === "UNAUTHORIZED") {
           return reply
             .code(403)
-            .send({ error: "Only admins can assign tasks" });
+            .send({ error: "Only admins/moderators can assign tasks" });
         }
         throw error;
       }
@@ -279,9 +374,9 @@ export default async function taskRoutes(fastify: FastifyInstance) {
     async (request, reply) => {
       try {
         const { id } = request.params as { id: string };
-        const user = request.user as { id: string; role: Role };
+        const user = request.user as { id: string };
 
-        const result = await taskService.deleteTask(id, user.id, user.role);
+        const result = await taskService.deleteTask(id, user.id);
         reply.send(result);
       } catch (error: any) {
         if (error.message === "TASK_NOT_FOUND") {
@@ -290,7 +385,10 @@ export default async function taskRoutes(fastify: FastifyInstance) {
         if (error.message === "UNAUTHORIZED") {
           return reply
             .code(403)
-            .send({ error: "You can only delete your own tasks" });
+            .send({
+              error:
+                "You can only delete your own tasks or must be an admin/moderator",
+            });
         }
         throw error;
       }

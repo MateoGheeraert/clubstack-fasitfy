@@ -9,7 +9,8 @@ import {
 export type OrganizationWithUsers = Organization & {
   users: {
     id: string;
-    user: Pick<User, "id" | "email" | "role">;
+    user: Pick<User, "id" | "email">;
+    role: string;
     createdAt: Date;
   }[];
 };
@@ -17,7 +18,8 @@ export type OrganizationWithUsers = Organization & {
 export type OrganizationWithDetails = Organization & {
   users: {
     id: string;
-    user: Pick<User, "id" | "email" | "role">;
+    user: Pick<User, "id" | "email">;
+    role: string;
     createdAt: Date;
   }[];
   Account: Account | null;
@@ -66,7 +68,7 @@ export class OrganizationModel {
         users: {
           include: {
             user: {
-              select: { id: true, email: true, role: true },
+              select: { id: true, email: true },
             },
           },
         },
@@ -98,7 +100,7 @@ export class OrganizationModel {
         users: {
           include: {
             user: {
-              select: { id: true, email: true, role: true },
+              select: { id: true, email: true },
             },
           },
         },
@@ -114,7 +116,7 @@ export class OrganizationModel {
         users: {
           include: {
             user: {
-              select: { id: true, email: true, role: true },
+              select: { id: true, email: true },
             },
           },
         },
@@ -149,7 +151,7 @@ export class OrganizationModel {
           users: {
             include: {
               user: {
-                select: { id: true, email: true, role: true },
+                select: { id: true, email: true },
               },
             },
           },
@@ -168,7 +170,7 @@ export class OrganizationModel {
       },
       include: {
         user: {
-          select: { id: true, email: true, role: true },
+          select: { id: true, email: true },
         },
         organization: true,
       },

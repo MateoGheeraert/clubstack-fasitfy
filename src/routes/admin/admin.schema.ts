@@ -15,11 +15,12 @@ export const adminUserListResponse = {
 // Admin Task Management Schemas
 export const adminCreateTaskSchema = {
   type: "object",
-  required: ["title", "userId"],
+  required: ["title", "userId", "organizationId"],
   properties: {
     title: { type: "string", minLength: 1, maxLength: 255 },
     description: { type: "string", maxLength: 1000 },
     userId: { type: "string" },
+    organizationId: { type: "string" },
   },
 } as const;
 
@@ -36,6 +37,7 @@ export const adminTasksQuerySchema = {
   properties: {
     status: { type: "string" },
     userId: { type: "string" },
+    organizationId: { type: "string" },
     page: { type: "integer", minimum: 1, default: 1 },
     limit: { type: "integer", minimum: 1, maximum: 100, default: 10 },
   },

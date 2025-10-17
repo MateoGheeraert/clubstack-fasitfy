@@ -1,13 +1,15 @@
-import { Task, User } from "@prisma/client";
+import { Task, User, Organization } from "@prisma/client";
 
 export type TaskWithUser = Task & {
-  user: Pick<User, "id" | "email" | "role">;
+  user: Pick<User, "id" | "email">;
+  organization: Pick<Organization, "id" | "name">;
 };
 
 export type CreateTaskInput = {
   title: string;
   description?: string;
   userId: string;
+  organizationId: string;
 };
 
 export type UpdateTaskInput = {
@@ -18,6 +20,7 @@ export type UpdateTaskInput = {
 export type TaskFilters = {
   status?: string;
   userId?: string;
+  organizationId?: string;
   page?: number;
   limit?: number;
 };

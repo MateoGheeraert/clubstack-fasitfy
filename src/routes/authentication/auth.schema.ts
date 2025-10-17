@@ -21,7 +21,6 @@ export const authRegisterResponse = {
     properties: {
       id: { type: "string" },
       email: { type: "string" },
-      role: { type: "string" },
     },
   },
   409: {

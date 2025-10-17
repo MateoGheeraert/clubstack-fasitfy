@@ -12,8 +12,8 @@ async function main() {
 
   const admin = await prisma.user.upsert({
     where: { email: email1 },
-    update: { role: Role.ADMIN },
-    create: { email: email1, passwordHash: passwordHash1, role: Role.ADMIN },
+    update: {},
+    create: { email: email1, passwordHash: passwordHash1 },
   });
 
   // ORGANIZATIONS
@@ -43,50 +43,60 @@ async function main() {
   const passwordHash2 = await hash("Mateo1234!", 10);
   const mateo = await prisma.user.upsert({
     where: { email: email2 },
-    update: { role: Role.USER },
-    create: { email: email2, passwordHash: passwordHash2, role: Role.USER },
+    update: {},
+    create: { email: email2, passwordHash: passwordHash2 },
   });
 
   const email5 = "simon@gmail.com";
   const passwordHash5 = await hash("Simon1234!", 10);
   const simon = await prisma.user.upsert({
     where: { email: email5 },
-    update: { role: Role.USER },
-    create: { email: email5, passwordHash: passwordHash5, role: Role.USER },
+    update: {},
+    create: { email: email5, passwordHash: passwordHash5 },
   });
 
   const email6 = "mathias@gmail.com";
   const passwordHash6 = await hash("Mathias1234!", 10);
   const mathias = await prisma.user.upsert({
     where: { email: email6 },
-    update: { role: Role.USER },
-    create: { email: email6, passwordHash: passwordHash6, role: Role.USER },
+    update: {},
+    create: { email: email6, passwordHash: passwordHash6 },
   });
 
   const email7 = "thomas@gmail.com";
   const passwordHash7 = await hash("Thomas1234!", 10);
   const thomas = await prisma.user.upsert({
     where: { email: email7 },
-    update: { role: Role.USER },
-    create: { email: email7, passwordHash: passwordHash7, role: Role.USER },
+    update: {},
+    create: { email: email7, passwordHash: passwordHash7 },
   });
 
   const email8 = "lucas@gmail.com";
   const passwordHash8 = await hash("Lucas1234!", 10);
   const lucas = await prisma.user.upsert({
     where: { email: email8 },
-    update: { role: Role.USER },
-    create: { email: email8, passwordHash: passwordHash8, role: Role.USER },
+    update: {},
+    create: { email: email8, passwordHash: passwordHash8 },
   });
 
   // USER-ORGANIZATION RELATIONSHIPS
   const userOrgRelations = [
-    { userId: mateo.id, organizationId: createdOrgs[0].id }, // mateo -> KLJ Merkem
-    { userId: simon.id, organizationId: createdOrgs[0].id }, // simon -> KLJ Merkem
-    { userId: mathias.id, organizationId: createdOrgs[0].id }, // mathias -> KLJ Merkem
-    { userId: mateo.id, organizationId: createdOrgs[1].id }, // mateo -> Merkem Sport
-    { userId: thomas.id, organizationId: createdOrgs[1].id }, // thomas -> Merkem Sport
-    { userId: lucas.id, organizationId: createdOrgs[1].id }, // lucas -> Merkem Sport
+    { userId: admin.id, organizationId: createdOrgs[0].id, role: Role.ADMIN }, // admin -> KLJ Merkem
+    { userId: admin.id, organizationId: createdOrgs[1].id, role: Role.ADMIN }, // admin -> Merkem Sport
+    {
+      userId: mateo.id,
+      organizationId: createdOrgs[0].id,
+      role: Role.MODERATOR,
+    }, // mateo -> KLJ Merkem (MODERATOR)
+    { userId: simon.id, organizationId: createdOrgs[0].id, role: Role.USER }, // simon -> KLJ Merkem
+    { userId: mathias.id, organizationId: createdOrgs[0].id, role: Role.USER }, // mathias -> KLJ Merkem
+    { userId: mateo.id, organizationId: createdOrgs[1].id, role: Role.USER }, // mateo -> Merkem Sport (USER in different org)
+    {
+      userId: thomas.id,
+      organizationId: createdOrgs[1].id,
+      role: Role.MODERATOR,
+    }, // thomas -> Merkem Sport (MODERATOR)
+    { userId: lucas.id, organizationId: createdOrgs[1].id, role: Role.USER }, // lucas -> Merkem Sport
   ];
 
   for (const relation of userOrgRelations) {
@@ -97,7 +107,7 @@ async function main() {
           organizationId: relation.organizationId,
         },
       },
-      update: {},
+      update: { role: relation.role },
       create: {
         id: `user-org-${relation.userId}-${relation.organizationId}`,
         ...relation,
@@ -198,6 +208,7 @@ async function main() {
       description: "Maak de vragen en antwoorden voor de jaarlijkse quiz.",
       status: "pending",
       userId: mateo.id,
+      organizationId: createdOrgs[0].id,
     },
     {
       id: "task-klj-simon-001",
@@ -205,6 +216,7 @@ async function main() {
       description: "Regel de zaal, muziek en drank voor de fuif.",
       status: "in_progress",
       userId: simon.id,
+      organizationId: createdOrgs[0].id,
     },
     {
       id: "task-klj-mathias-001",
@@ -212,6 +224,7 @@ async function main() {
       description: "Maak affiches en verspreid ze in het dorp.",
       status: "pending",
       userId: mathias.id,
+      organizationId: createdOrgs[0].id,
     },
     {
       id: "task-merkem-sport-mateo-001",
@@ -219,6 +232,7 @@ async function main() {
       description: "Controleer en update de gegevens van alle leden.",
       status: "in_progress",
       userId: mateo.id,
+      organizationId: createdOrgs[1].id,
     },
     {
       id: "task-merkem-sport-thomas-001",
@@ -226,6 +240,7 @@ async function main() {
       description: "Zorg voor de uitrusting en het veld.",
       status: "pending",
       userId: thomas.id,
+      organizationId: createdOrgs[1].id,
     },
     {
       id: "task-merkem-sport-lucas-001",
@@ -233,6 +248,7 @@ async function main() {
       description: "Controleer de inkomsten en uitgaven van de club.",
       status: "completed",
       userId: lucas.id,
+      organizationId: createdOrgs[1].id,
     },
   ];
 
@@ -244,6 +260,7 @@ async function main() {
         description: taskData.description,
         status: taskData.status,
         userId: taskData.userId,
+        organizationId: taskData.organizationId,
       },
       create: taskData,
     });
@@ -252,12 +269,12 @@ async function main() {
   console.log("✅ Database seeded successfully!");
   console.log("");
   console.log("👥 Users created:");
-  console.log(`   Admin: ${admin.email} (Role: ${admin.role})`);
-  console.log(`   User: ${mateo.email} (Role: ${mateo.role})`);
-  console.log(`   User: ${simon.email} (Role: ${simon.role})`);
-  console.log(`   User: ${mathias.email} (Role: ${mathias.role})`);
-  console.log(`   User: ${thomas.email} (Role: ${thomas.role})`);
-  console.log(`   User: ${lucas.email} (Role: ${lucas.role})`);
+  console.log(`   Admin: ${admin.email}`);
+  console.log(`   User: ${mateo.email}`);
+  console.log(`   User: ${simon.email}`);
+  console.log(`   User: ${mathias.email}`);
+  console.log(`   User: ${thomas.email}`);
+  console.log(`   User: ${lucas.email}`);
   console.log("");
   console.log("🏢 Organizations created:");
   createdOrgs.forEach((org) => console.log(`   ${org.name} (${org.id})`));
@@ -274,6 +291,18 @@ async function main() {
     "🔗 User-Organization relations created:",
     userOrgRelations.length
   );
+  console.log("");
+  console.log("🎭 User Roles per Organization:");
+  console.log(`   ${admin.email}:`);
+  console.log(`      - ${createdOrgs[0].name}: ADMIN`);
+  console.log(`      - ${createdOrgs[1].name}: ADMIN`);
+  console.log(`   ${mateo.email}:`);
+  console.log(`      - ${createdOrgs[0].name}: MODERATOR`);
+  console.log(`      - ${createdOrgs[1].name}: USER`);
+  console.log(`   ${simon.email}: ${createdOrgs[0].name} - USER`);
+  console.log(`   ${mathias.email}: ${createdOrgs[0].name} - USER`);
+  console.log(`   ${thomas.email}: ${createdOrgs[1].name} - MODERATOR`);
+  console.log(`   ${lucas.email}: ${createdOrgs[1].name} - USER`);
 }
 
 main().finally(() => prisma.$disconnect());

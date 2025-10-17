@@ -13,6 +13,26 @@ export class OrganizationService {
     this.organizationModel = new OrganizationModel(prisma);
   }
 
+  // Helper method to get user's role in an organization
+  private async getUserRoleInOrganization(
+    userId: string,
+    organizationId: string
+  ): Promise<Role | null> {
+    const userOrg = await this.prisma.userOrganization.findUnique({
+      where: {
+        userId_organizationId: {
+          userId,
+          organizationId,
+        },
+      },
+      select: {
+        role: true,
+      },
+    });
+
+    return userOrg?.role || null;
+  }
+
   async createOrganization(data: CreateOrganizationInput) {
     // Check if organization with same name already exists
     const existingOrg = await this.organizationModel.findByName(data.name);
@@ -50,10 +70,11 @@ export class OrganizationService {
   async updateOrganization(
     id: string,
     data: UpdateOrganizationInput,
-    requesterRole: Role
+    requesterId: string
   ) {
-    // Only admins can update organizations
-    if (requesterRole !== "ADMIN") {
+    // Check if user has admin role in this organization
+    const userRole = await this.getUserRoleInOrganization(requesterId, id);
+    if (userRole !== "ADMIN") {
       throw new Error("UNAUTHORIZED");
     }
 
@@ -71,9 +92,10 @@ export class OrganizationService {
     return this.organizationModel.update(id, data);
   }
 
-  async deleteOrganization(id: string, requesterRole: Role) {
-    // Only admins can delete organizations
-    if (requesterRole !== "ADMIN") {
+  async deleteOrganization(id: string, requesterId: string) {
+    // Check if user has admin role in this organization
+    const userRole = await this.getUserRoleInOrganization(requesterId, id);
+    if (userRole !== "ADMIN") {
       throw new Error("UNAUTHORIZED");
     }
 
@@ -87,9 +109,13 @@ export class OrganizationService {
   async addUserToOrganization(
     organizationId: string,
     userId: string,
-    requesterRole: Role
+    requesterId: string
   ) {
-    // Only admins can add users to organizations
+    // Check if requester has admin role in this organization
+    const requesterRole = await this.getUserRoleInOrganization(
+      requesterId,
+      organizationId
+    );
     if (requesterRole !== "ADMIN") {
       throw new Error("UNAUTHORIZED");
     }
@@ -122,9 +148,13 @@ export class OrganizationService {
   async removeUserFromOrganization(
     organizationId: string,
     userId: string,
-    requesterRole: Role
+    requesterId: string
   ) {
-    // Only admins can remove users from organizations
+    // Check if requester has admin role in this organization
+    const requesterRole = await this.getUserRoleInOrganization(
+      requesterId,
+      organizationId
+    );
     if (requesterRole !== "ADMIN") {
       throw new Error("UNAUTHORIZED");
     }
@@ -147,13 +177,11 @@ export class OrganizationService {
     return { message: "User removed from organization successfully" };
   }
 
-  async getUserOrganizations(
-    userId: string,
-    requesterId: string,
-    requesterRole: Role
-  ) {
-    // Users can only see their own organizations, admins can see any user's organizations
-    if (requesterRole !== "ADMIN" && userId !== requesterId) {
+  async getUserOrganizations(userId: string, requesterId: string) {
+    // Users can only see their own organizations unless they request someone else's
+    // In that case, we should check if the requester is an admin in at least one organization
+    if (userId !== requesterId) {
+      // For now, we'll just deny access. You could implement a more sophisticated check
       throw new Error("UNAUTHORIZED");
     }
 

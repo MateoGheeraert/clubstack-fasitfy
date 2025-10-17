@@ -14,6 +14,7 @@ model Organization {
   updatedAt DateTime           @updatedAt
   Account   Account[]
   Activity  Activity[]
+  Task      Task[]
   users     UserOrganization[]
 }
 
@@ -21,7 +22,6 @@ model User {
   id            String             @id @default(cuid())
   email         String             @unique
   passwordHash  String
-  role          Role               @default(USER)
   createdAt     DateTime           @default(now())
   updatedAt     DateTime           @updatedAt
   Task          Task[]
@@ -45,6 +45,7 @@ model UserOrganization {
   id             String       @id @default(cuid())
   userId         String
   organizationId String
+  role          Role          @default(USER)
   createdAt      DateTime     @default(now())
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -58,9 +59,11 @@ model Task {
   description String?
   status      String   @default("pending")
   userId      String
+  organizationId String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   user        User     @relation(fields: [userId], references: [id])
+  organization Organization @relation(fields: [organizationId], references: [id])
 
   @@index([userId])
 }

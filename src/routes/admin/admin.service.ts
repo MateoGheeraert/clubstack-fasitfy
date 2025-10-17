@@ -4,24 +4,42 @@ export class AdminService {
   constructor(private prisma: PrismaClient) {}
 
   async listUsers() {
-    return this.prisma.user.findMany({
-      select: { id: true, email: true, role: true },
+    // Return users with their organization roles
+    const users = await this.prisma.user.findMany({
+      select: {
+        id: true,
+        email: true,
+        organizations: {
+          select: {
+            role: true,
+            organization: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+      },
     });
+    return users;
   }
 
   // Admin-specific task management methods
   async getAllTasks(filters: {
     status?: string;
     userId?: string;
+    organizationId?: string;
     page?: number;
     limit?: number;
   }) {
-    const { status, userId, page = 1, limit = 10 } = filters;
+    const { status, userId, organizationId, page = 1, limit = 10 } = filters;
     const skip = (page - 1) * limit;
 
     const where: any = {};
     if (status) where.status = status;
     if (userId) where.userId = userId;
+    if (organizationId) where.organizationId = organizationId;
 
     const [tasks, total] = await Promise.all([
       this.prisma.task.findMany({
@@ -30,7 +48,10 @@ export class AdminService {
         take: limit,
         include: {
           user: {
-            select: { id: true, email: true, role: true },
+            select: { id: true, email: true },
+          },
+          organization: {
+            select: { id: true, name: true },
           },
         },
         orderBy: { createdAt: "desc" },
@@ -53,6 +74,7 @@ export class AdminService {
     title: string;
     description?: string;
     userId: string;
+    organizationId: string;
   }) {
     // Verify the user exists
     const user = await this.prisma.user.findUnique({
@@ -63,15 +85,42 @@ export class AdminService {
       throw new Error("USER_NOT_FOUND");
     }
 
+    // Verify the organization exists
+    const organization = await this.prisma.organization.findUnique({
+      where: { id: data.organizationId },
+    });
+
+    if (!organization) {
+      throw new Error("ORGANIZATION_NOT_FOUND");
+    }
+
+    // Verify user is a member of the organization
+    const userOrg = await this.prisma.userOrganization.findUnique({
+      where: {
+        userId_organizationId: {
+          userId: data.userId,
+          organizationId: data.organizationId,
+        },
+      },
+    });
+
+    if (!userOrg) {
+      throw new Error("USER_NOT_IN_ORGANIZATION");
+    }
+
     return this.prisma.task.create({
       data: {
         title: data.title,
         description: data.description,
         userId: data.userId,
+        organizationId: data.organizationId,
       },
       include: {
         user: {
-          select: { id: true, email: true, role: true },
+          select: { id: true, email: true },
+        },
+        organization: {
+          select: { id: true, name: true },
         },
       },
     });
@@ -90,10 +139,27 @@ export class AdminService {
     // Verify the task exists
     const task = await this.prisma.task.findUnique({
       where: { id: taskId },
+      include: {
+        organization: true,
+      },
     });
 
     if (!task) {
       throw new Error("TASK_NOT_FOUND");
+    }
+
+    // Verify the new user is a member of the task's organization
+    const userOrg = await this.prisma.userOrganization.findUnique({
+      where: {
+        userId_organizationId: {
+          userId: newUserId,
+          organizationId: task.organizationId,
+        },
+      },
+    });
+
+    if (!userOrg) {
+      throw new Error("USER_NOT_IN_ORGANIZATION");
     }
 
     return this.prisma.task.update({
@@ -101,7 +167,10 @@ export class AdminService {
       data: { userId: newUserId },
       include: {
         user: {
-          select: { id: true, email: true, role: true },
+          select: { id: true, email: true },
+        },
+        organization: {
+          select: { id: true, name: true },
         },
       },
     });
@@ -154,7 +223,7 @@ export class AdminService {
       userTaskCounts.map(async (item) => {
         const user = await this.prisma.user.findUnique({
           where: { id: item.userId },
-          select: { id: true, email: true, role: true },
+          select: { id: true, email: true },
         });
         return {
           user,
