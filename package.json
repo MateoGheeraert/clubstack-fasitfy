@@ -25,7 +25,8 @@
     "@prisma/client": "^6.16.2",
     "bcryptjs": "^3.0.2",
     "dotenv": "^17.2.2",
-    "fastify": "^5.6.1"
+    "fastify": "^5.6.1",
+    "swagger": "^0.7.5"
   },
   "devDependencies": {
     "@types/bcryptjs": "^3.0.0",
