@@ -3,6 +3,9 @@ import { TaskService } from "./service";
 import {
   getTasksQuerySchema,
   taskParamsSchema,
+  tasksResponseSchema,
+  taskStatisticsResponseSchema,
+  errorResponseSchema,
 } from "./schema";
 
 export default async function getRoutes(fastify: FastifyInstance) {
@@ -18,6 +21,10 @@ export default async function getRoutes(fastify: FastifyInstance) {
         security: [{ bearerAuth: [] }],
         summary: "Get all tasks with filters",
         querystring: getTasksQuerySchema,
+        response: {
+          200: tasksResponseSchema,
+          403: errorResponseSchema,
+        },
       },
     },
     async (request, reply) => {
@@ -52,6 +59,10 @@ export default async function getRoutes(fastify: FastifyInstance) {
             limit: { type: "integer", minimum: 1, maximum: 100, default: 10 },
           },
         },
+        response: {
+          200: tasksResponseSchema,
+          403: errorResponseSchema,
+        },
       },
     },
     async (request, reply) => {
@@ -77,6 +88,10 @@ export default async function getRoutes(fastify: FastifyInstance) {
         tags: ["tasks"],
         security: [{ bearerAuth: [] }],
         summary: "Get task statistics dashboard (Admin only)",
+        response: {
+          200: taskStatisticsResponseSchema,
+          403: errorResponseSchema,
+        },
       },
     },
     async (request, reply) => {

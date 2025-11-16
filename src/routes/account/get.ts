@@ -4,6 +4,7 @@ import { AccountService } from "./service";
 import {
   getAccountsQuerySchema,
   accountsResponseSchema,
+  accountResponseSchema,
   errorResponseSchema,
 } from "./schema";
 
@@ -61,6 +62,12 @@ export default async function getRoutes(fastify: FastifyInstance) {
         tags: ["accounts"],
         security: [{ bearerAuth: [] }],
         summary: "Get current user's accounts",
+        response: {
+          200: {
+            type: "array",
+            items: accountResponseSchema,
+          },
+        },
       },
     },
     async (request, reply) => {

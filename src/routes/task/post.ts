@@ -3,6 +3,8 @@ import { TaskService } from "./service";
 import {
   createTaskSchema,
   getTasksQuerySchema,
+  taskResponseSchema,
+  errorResponseSchema,
 } from "./schema";
 
 export default async function postRoutes(fastify: FastifyInstance) {
@@ -18,6 +20,12 @@ export default async function postRoutes(fastify: FastifyInstance) {
         security: [{ bearerAuth: [] }],
         summary: "Create a new task (Admin/Moderator in organization)",
         body: createTaskSchema,
+        response: {
+          201: taskResponseSchema,
+          400: errorResponseSchema,
+          403: errorResponseSchema,
+          404: errorResponseSchema,
+        },
       },
     },
     async (request, reply) => {

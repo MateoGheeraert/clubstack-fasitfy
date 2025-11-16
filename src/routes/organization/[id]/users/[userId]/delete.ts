@@ -1,6 +1,13 @@
 import { FastifyInstance } from "fastify";
 import { OrganizationService } from "../../../service";
-import { userOrganizationParamsSchema } from "../../../schema";
+import { userOrganizationParamsSchema, errorResponseSchema } from "../../../schema";
+
+const successResponseSchema = {
+  type: "object",
+  properties: {
+    message: { type: "string" },
+  },
+} as const;
 
 export default async function deleteUserRoute(fastify: FastifyInstance) {
   const organizationService = new OrganizationService(fastify.prisma);
@@ -15,6 +22,11 @@ export default async function deleteUserRoute(fastify: FastifyInstance) {
         security: [{ bearerAuth: [] }],
         summary: "Remove user from organization (Admin only)",
         params: userOrganizationParamsSchema,
+        response: {
+          200: successResponseSchema,
+          403: errorResponseSchema,
+          404: errorResponseSchema,
+        },
       },
     },
     async (request, reply) => {

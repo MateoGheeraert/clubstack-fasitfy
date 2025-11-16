@@ -54,3 +54,76 @@ export const taskParamsSchema = {
     id: { type: "string" },
   },
 } as const;
+
+export const taskResponseSchema = {
+  type: "object",
+  properties: {
+    id: { type: "string" },
+    title: { type: "string" },
+    description: { type: "string" },
+    status: { type: "string" },
+    userId: { type: "string" },
+    organizationId: { type: "string" },
+    createdAt: { type: "string", format: "date-time" },
+    updatedAt: { type: "string", format: "date-time" },
+    user: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+        email: { type: "string" },
+        role: { type: "string" },
+      },
+    },
+    organization: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+        name: { type: "string" },
+      },
+    },
+  },
+} as const;
+
+export const tasksResponseSchema = {
+  type: "object",
+  properties: {
+    tasks: {
+      type: "array",
+      items: taskResponseSchema,
+    },
+    pagination: {
+      type: "object",
+      properties: {
+        page: { type: "integer" },
+        limit: { type: "integer" },
+        total: { type: "integer" },
+        totalPages: { type: "integer" },
+      },
+    },
+  },
+} as const;
+
+export const taskStatisticsResponseSchema = {
+  type: "object",
+  properties: {
+    total: { type: "integer" },
+    pending: { type: "integer" },
+    in_progress: { type: "integer" },
+    completed: { type: "integer" },
+    cancelled: { type: "integer" },
+  },
+} as const;
+
+export const errorResponseSchema = {
+  type: "object",
+  properties: {
+    error: { type: "string" },
+  },
+} as const;
+
+export const successResponseSchema = {
+  type: "object",
+  properties: {
+    message: { type: "string" },
+  },
+} as const;

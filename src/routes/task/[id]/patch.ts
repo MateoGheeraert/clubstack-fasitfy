@@ -5,6 +5,8 @@ import {
   updateTaskStatusSchema,
   assignTaskSchema,
   taskParamsSchema,
+  taskResponseSchema,
+  errorResponseSchema,
 } from "../schema";
 
 export default async function patchIdRoutes(fastify: FastifyInstance) {
@@ -21,6 +23,11 @@ export default async function patchIdRoutes(fastify: FastifyInstance) {
         summary: "Update task details",
         params: taskParamsSchema,
         body: updateTaskSchema,
+        response: {
+          200: taskResponseSchema,
+          403: errorResponseSchema,
+          404: errorResponseSchema,
+        },
       },
     },
     async (request, reply) => {
@@ -51,7 +58,7 @@ export default async function patchIdRoutes(fastify: FastifyInstance) {
 
   // PATCH /tasks/:id/status - Update task status
   fastify.patch(
-    "/:id/status",
+    "/tasks/:id/status",
     {
       preHandler: [fastify.authenticate],
       schema: {
@@ -60,6 +67,12 @@ export default async function patchIdRoutes(fastify: FastifyInstance) {
         summary: "Update task status",
         params: taskParamsSchema,
         body: updateTaskStatusSchema,
+        response: {
+          200: taskResponseSchema,
+          400: errorResponseSchema,
+          403: errorResponseSchema,
+          404: errorResponseSchema,
+        },
       },
     },
     async (request, reply) => {
@@ -98,6 +111,12 @@ export default async function patchIdRoutes(fastify: FastifyInstance) {
         summary: "Assign task to user (Admin/Moderator in organization)",
         params: taskParamsSchema,
         body: assignTaskSchema,
+        response: {
+          200: taskResponseSchema,
+          400: errorResponseSchema,
+          403: errorResponseSchema,
+          404: errorResponseSchema,
+        },
       },
     },
     async (request, reply) => {
@@ -143,6 +162,12 @@ export default async function patchIdRoutes(fastify: FastifyInstance) {
           properties: {
             userId: { type: "string" }
           }
+        },
+        response: {
+          200: taskResponseSchema,
+          400: errorResponseSchema,
+          403: errorResponseSchema,
+          404: errorResponseSchema,
         },
       },
     },

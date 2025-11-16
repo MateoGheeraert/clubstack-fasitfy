@@ -60,4 +60,20 @@ export default async function getRoutes(fastify: FastifyInstance) {
       return await userService.getUserStats(req.user.id);
     }
   );
+
+  // GET /user/all - List all users (admin endpoint)
+  fastify.get(
+    "/user/all",
+    {
+      preHandler: [fastify.authenticate],
+      schema: {
+        tags: ["user"],
+        security: [{ bearerAuth: [] }],
+        summary: "List all users (requires admin privileges)",
+      },
+    },
+    async () => {
+      return userService.listAllUsers();
+    }
+  );
 }

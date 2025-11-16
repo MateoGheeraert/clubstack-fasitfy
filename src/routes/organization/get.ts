@@ -4,6 +4,8 @@ import { OrganizationService } from "./service";
 import {
   getOrganizationsQuerySchema,
   organizationsResponseSchema,
+  organizationResponseSchema,
+  errorResponseSchema,
 } from "./schema";
 
 export default async function getRoutes(fastify: FastifyInstance) {
@@ -43,6 +45,12 @@ export default async function getRoutes(fastify: FastifyInstance) {
         tags: ["organizations"],
         security: [{ bearerAuth: [] }],
         summary: "Get current user's organizations",
+        response: {
+          200: {
+            type: "array",
+            items: organizationResponseSchema,
+          },
+        },
       },
     },
     async (request, reply) => {
@@ -67,6 +75,13 @@ export default async function getRoutes(fastify: FastifyInstance) {
           properties: {
             userId: { type: "string" },
           },
+        },
+        response: {
+          200: {
+            type: "array",
+            items: organizationResponseSchema,
+          },
+          403: errorResponseSchema,
         },
       },
     },

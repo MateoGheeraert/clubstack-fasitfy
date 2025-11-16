@@ -120,6 +120,36 @@ export default async function getRoutes(fastify: FastifyInstance) {
             limit: { type: "integer", minimum: 1, maximum: 20, default: 5 },
           },
         },
+        response: {
+          200: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                id: { type: "string" },
+                organizationId: { type: "string" },
+                title: { type: "string" },
+                starts_at: { type: "string", format: "date-time" },
+                ends_at: { type: "string", format: "date-time" },
+                location: { type: "string" },
+                description: { type: "string" },
+                attendees: {
+                  type: "array",
+                  items: { type: "string" },
+                },
+                createdAt: { type: "string", format: "date-time" },
+                updatedAt: { type: "string", format: "date-time" },
+                organization: {
+                  type: "object",
+                  properties: {
+                    id: { type: "string" },
+                    name: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+        },
       },
     },
     async (request, reply) => {

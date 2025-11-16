@@ -49,9 +49,6 @@ import deleteOrganizationUserRoute from "./routes/organization/[id]/users/[userI
 // Authentication routes
 import postAuthRoutes from "./routes/authentication/post";
 
-// Admin routes
-import getAdminRoutes from "./routes/admin/get";
-
 export default async function (app: FastifyInstance) {
   // Accounts
   app.register(getAccountRoutes);
@@ -101,7 +98,4 @@ export default async function (app: FastifyInstance) {
 
   // Authentication
   app.register(postAuthRoutes);
-
-  // Admin
-  app.register(getAdminRoutes);
 }

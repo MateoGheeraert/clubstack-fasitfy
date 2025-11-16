@@ -3,7 +3,19 @@ import { OrganizationService } from "../../service";
 import {
   organizationParamsSchema,
   addUserToOrganizationSchema,
+  errorResponseSchema,
 } from "../../schema";
+
+const userOrganizationResponseSchema = {
+  type: "object",
+  properties: {
+    id: { type: "string" },
+    userId: { type: "string" },
+    organizationId: { type: "string" },
+    role: { type: "string" },
+    createdAt: { type: "string", format: "date-time" },
+  },
+} as const;
 
 export default async function postUsersRoute(fastify: FastifyInstance) {
   const organizationService = new OrganizationService(fastify.prisma);
@@ -19,6 +31,12 @@ export default async function postUsersRoute(fastify: FastifyInstance) {
         summary: "Add user to organization (Admin only)",
         params: organizationParamsSchema,
         body: addUserToOrganizationSchema,
+        response: {
+          201: userOrganizationResponseSchema,
+          403: errorResponseSchema,
+          404: errorResponseSchema,
+          409: errorResponseSchema,
+        },
       },
     },
     async (request, reply) => {

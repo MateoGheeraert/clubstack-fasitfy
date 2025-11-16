@@ -5,6 +5,13 @@ import {
   errorResponseSchema,
 } from "../schema";
 
+const successResponseSchema = {
+  type: "object",
+  properties: {
+    message: { type: "string" },
+  },
+} as const;
+
 export default async function deleteRoute(fastify: FastifyInstance) {
   const organizationService = new OrganizationService(fastify.prisma);
 
@@ -18,6 +25,11 @@ export default async function deleteRoute(fastify: FastifyInstance) {
         security: [{ bearerAuth: [] }],
         summary: "Delete organization (Admin only)",
         params: organizationParamsSchema,
+        response: {
+          200: successResponseSchema,
+          403: errorResponseSchema,
+          404: errorResponseSchema,
+        },
       },
     },
     async (request, reply) => {

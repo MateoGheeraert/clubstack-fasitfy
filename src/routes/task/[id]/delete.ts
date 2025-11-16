@@ -1,6 +1,6 @@
 import { FastifyInstance } from "fastify";
 import { TaskService } from "../service";
-import { taskParamsSchema } from "../schema";
+import { taskParamsSchema, successResponseSchema, errorResponseSchema } from "../schema";
 
 export default async function deleteIdRoute(fastify: FastifyInstance) {
   const taskService = new TaskService(fastify.prisma);
@@ -15,6 +15,11 @@ export default async function deleteIdRoute(fastify: FastifyInstance) {
         security: [{ bearerAuth: [] }],
         summary: "Delete task",
         params: taskParamsSchema,
+        response: {
+          200: successResponseSchema,
+          403: errorResponseSchema,
+          404: errorResponseSchema,
+        },
       },
     },
     async (request, reply) => {

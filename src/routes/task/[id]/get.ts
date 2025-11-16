@@ -1,6 +1,6 @@
 import { FastifyInstance } from "fastify";
 import { TaskService } from "../service";
-import { taskParamsSchema } from "../schema";
+import { taskParamsSchema, taskResponseSchema, errorResponseSchema } from "../schema";
 
 export default async function getIdRoute(fastify: FastifyInstance) {
   const taskService = new TaskService(fastify.prisma);
@@ -15,6 +15,11 @@ export default async function getIdRoute(fastify: FastifyInstance) {
         security: [{ bearerAuth: [] }],
         summary: "Get task by ID",
         params: taskParamsSchema,
+        response: {
+          200: taskResponseSchema,
+          403: errorResponseSchema,
+          404: errorResponseSchema,
+        },
       },
     },
     async (request, reply) => {

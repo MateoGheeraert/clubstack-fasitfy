@@ -1,5 +1,6 @@
 import { FastifyInstance } from "fastify";
 import { TaskService } from "../../service";
+import { tasksResponseSchema, errorResponseSchema } from "../../schema";
 
 export default async function getOrganizationIdRoute(fastify: FastifyInstance) {
   const taskService = new TaskService(fastify.prisma);
@@ -29,6 +30,10 @@ export default async function getOrganizationIdRoute(fastify: FastifyInstance) {
             page: { type: "integer", minimum: 1, default: 1 },
             limit: { type: "integer", minimum: 1, maximum: 100, default: 10 },
           },
+        },
+        response: {
+          200: tasksResponseSchema,
+          403: errorResponseSchema,
         },
       },
     },
