@@ -260,11 +260,20 @@ export class OrganizationService {
   }
 
   async getMyOrganizations(userId: string) {
-    return this.prisma.userOrganization.findMany({
+    const userOrganizations = await this.prisma.userOrganization.findMany({
       where: { userId },
       include: {
         organization: true,
       },
     });
+
+    // Map to return organization details with user's role
+    return userOrganizations.map((uo) => ({
+      id: uo.organization.id,
+      name: uo.organization.name,
+      createdAt: uo.organization.createdAt,
+      updatedAt: uo.organization.updatedAt,
+      role: uo.role,
+    }));
   }
 }
