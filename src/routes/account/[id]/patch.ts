@@ -17,7 +17,7 @@ export default async function patchRoute(fastify: FastifyInstance) {
     {
       preHandler: [fastify.authenticate, fastify.authorize([Role.ADMIN])],
       schema: {
-        tags: ["accounts", "admin"],
+        tags: ["accounts"],
         security: [{ bearerAuth: [] }],
         summary: "Update account details (Admin only)",
         params: accountParamsSchema,

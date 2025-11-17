@@ -152,7 +152,7 @@ export default async function patchIdRoutes(fastify: FastifyInstance) {
     {
       preHandler: [fastify.authenticate],
       schema: {
-        tags: ["tasks", "admin"],
+        tags: ["tasks"],
         security: [{ bearerAuth: [] }],
         summary: "Reassign task to different user (Admin only)",
         params: taskParamsSchema,

@@ -14,7 +14,7 @@ export default async function deleteAttendeeRoute(fastify: FastifyInstance) {
     {
       preHandler: [fastify.authenticate, fastify.authorize([Role.ADMIN])],
       schema: {
-        tags: ["activities", "admin"],
+        tags: ["activities"],
         security: [{ bearerAuth: [] }],
         summary: "Remove attendee from activity (Admin only)",
         params: {

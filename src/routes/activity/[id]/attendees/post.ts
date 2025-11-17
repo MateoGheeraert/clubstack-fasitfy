@@ -15,7 +15,7 @@ export default async function postAttendeesRoute(fastify: FastifyInstance) {
     {
       preHandler: [fastify.authenticate, fastify.authorize([Role.ADMIN])],
       schema: {
-        tags: ["activities", "admin"],
+        tags: ["activities"],
         security: [{ bearerAuth: [] }],
         summary: "Add attendee to activity (Admin only)",
         body: {

@@ -15,7 +15,7 @@ export default async function deleteRoute(fastify: FastifyInstance) {
     {
       preHandler: [fastify.authenticate, fastify.authorize([Role.ADMIN])],
       schema: {
-        tags: ["activities", "admin"],
+        tags: ["activities"],
         security: [{ bearerAuth: [] }],
         summary: "Delete activity (Admin only)",
         params: activityParamsSchema,
