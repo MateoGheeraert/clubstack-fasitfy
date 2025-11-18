@@ -19,11 +19,9 @@ async function main() {
   // ORGANIZATIONS
   const organizations = [
     {
-      id: "org-klj-merkem",
       name: "KLJ Merkem",
     },
     {
-      id: "org-merkem-sport",
       name: "Merkem Sport",
     },
   ];
@@ -31,7 +29,7 @@ async function main() {
   const createdOrgs = [];
   for (const orgData of organizations) {
     const org = await prisma.organization.upsert({
-      where: { id: orgData.id },
+      where: { name: orgData.name },
       update: { name: orgData.name },
       create: orgData,
     });
@@ -86,11 +84,11 @@ async function main() {
     {
       userId: mateo.id,
       organizationId: createdOrgs[0].id,
-      role: Role.MODERATOR,
-    }, // mateo -> KLJ Merkem (MODERATOR)
+      role: Role.ADMIN,
+    }, // mateo -> KLJ Merkem (ADMIN)
     { userId: simon.id, organizationId: createdOrgs[0].id, role: Role.USER }, // simon -> KLJ Merkem
     { userId: mathias.id, organizationId: createdOrgs[0].id, role: Role.USER }, // mathias -> KLJ Merkem
-    { userId: mateo.id, organizationId: createdOrgs[1].id, role: Role.USER }, // mateo -> Merkem Sport (USER in different org)
+    { userId: mateo.id, organizationId: createdOrgs[1].id, role: Role.ADMIN }, // mateo -> Merkem Sport (USER in different org)
     {
       userId: thomas.id,
       organizationId: createdOrgs[1].id,
@@ -108,38 +106,31 @@ async function main() {
         },
       },
       update: { role: relation.role },
-      create: {
-        id: `user-org-${relation.userId}-${relation.organizationId}`,
-        ...relation,
-      },
+      create: relation,
     });
   }
 
   // ACCOUNTS
   const accounts = [
     {
-      id: "acc-klj-cash",
       organizationId: createdOrgs[0].id,
       accountName: "Kassa",
       balance: 500.0,
       type: "Cash",
     },
     {
-      id: "acc-klj-current",
       organizationId: createdOrgs[0].id,
       accountName: "Zichtrekening",
       balance: 2500.0,
       type: "Current Account",
     },
     {
-      id: "acc-klj-savings",
       organizationId: createdOrgs[0].id,
       accountName: "Spaarrekening",
       balance: 1000.0,
       type: "Savings Account",
     },
     {
-      id: "acc-merkem-sport-main",
       organizationId: createdOrgs[1].id,
       accountName: "Hoofdrekening",
       balance: 3000.0,
@@ -149,22 +140,32 @@ async function main() {
 
   const createdAccounts = [];
   for (const accountData of accounts) {
-    const account = await prisma.account.upsert({
-      where: { id: accountData.id },
-      update: {
+    // Find existing account by organization and name, or create new
+    const existingAccount = await prisma.account.findFirst({
+      where: {
+        organizationId: accountData.organizationId,
         accountName: accountData.accountName,
-        balance: accountData.balance,
-        type: accountData.type,
       },
-      create: accountData,
     });
+
+    const account = existingAccount
+      ? await prisma.account.update({
+          where: { id: existingAccount.id },
+          data: {
+            balance: accountData.balance,
+            type: accountData.type,
+          },
+        })
+      : await prisma.account.create({
+          data: accountData,
+        });
+
     createdAccounts.push(account);
   }
 
   // ACTIVITIES (in Dutch)
   const activities = [
     {
-      id: "act-klj-001",
       organizationId: createdOrgs[0].id,
       title: "Wekelijkse vergadering",
       starts_at: new Date("2025-10-10T19:00:00Z"),
@@ -174,7 +175,6 @@ async function main() {
       attendees: ["mateo@gmail.com", "simon@gmail.com", "mathias@gmail.com"],
     },
     {
-      id: "act-merkem-sport-001",
       organizationId: createdOrgs[1].id,
       title: "Voetbaltraining",
       starts_at: new Date("2025-10-12T18:00:00Z"),
@@ -186,24 +186,35 @@ async function main() {
   ];
 
   for (const activityData of activities) {
-    await prisma.activity.upsert({
-      where: { id: activityData.id },
-      update: {
+    // Find existing activity by organization and title, or create new
+    const existingActivity = await prisma.activity.findFirst({
+      where: {
+        organizationId: activityData.organizationId,
         title: activityData.title,
-        starts_at: activityData.starts_at,
-        ends_at: activityData.ends_at,
-        location: activityData.location,
-        description: activityData.description,
-        attendees: activityData.attendees,
       },
-      create: activityData,
     });
+
+    if (existingActivity) {
+      await prisma.activity.update({
+        where: { id: existingActivity.id },
+        data: {
+          starts_at: activityData.starts_at,
+          ends_at: activityData.ends_at,
+          location: activityData.location,
+          description: activityData.description,
+          attendees: activityData.attendees,
+        },
+      });
+    } else {
+      await prisma.activity.create({
+        data: activityData,
+      });
+    }
   }
 
   // TASKS (in Dutch)
   const tasks = [
     {
-      id: "task-klj-mateo-001",
       title: "Voorbereiden van de quiz",
       description: "Maak de vragen en antwoorden voor de jaarlijkse quiz.",
       status: "pending",
@@ -211,7 +222,6 @@ async function main() {
       organizationId: createdOrgs[0].id,
     },
     {
-      id: "task-klj-simon-001",
       title: "Organiseren van de fuif",
       description: "Regel de zaal, muziek en drank voor de fuif.",
       status: "in_progress",
@@ -219,7 +229,6 @@ async function main() {
       organizationId: createdOrgs[0].id,
     },
     {
-      id: "task-klj-mathias-001",
       title: "Promotie voor het evenement",
       description: "Maak affiches en verspreid ze in het dorp.",
       status: "pending",
@@ -227,7 +236,6 @@ async function main() {
       organizationId: createdOrgs[0].id,
     },
     {
-      id: "task-merkem-sport-mateo-001",
       title: "Bijwerken van de ledenlijst",
       description: "Controleer en update de gegevens van alle leden.",
       status: "in_progress",
@@ -235,7 +243,6 @@ async function main() {
       organizationId: createdOrgs[1].id,
     },
     {
-      id: "task-merkem-sport-thomas-001",
       title: "Voorbereiden van de wedstrijd",
       description: "Zorg voor de uitrusting en het veld.",
       status: "pending",
@@ -243,7 +250,6 @@ async function main() {
       organizationId: createdOrgs[1].id,
     },
     {
-      id: "task-merkem-sport-lucas-001",
       title: "Beheer van de financiën",
       description: "Controleer de inkomsten en uitgaven van de club.",
       status: "completed",
@@ -253,17 +259,28 @@ async function main() {
   ];
 
   for (const taskData of tasks) {
-    await prisma.task.upsert({
-      where: { id: taskData.id },
-      update: {
-        title: taskData.title,
-        description: taskData.description,
-        status: taskData.status,
+    // Find existing task by user, organization and title, or create new
+    const existingTask = await prisma.task.findFirst({
+      where: {
         userId: taskData.userId,
         organizationId: taskData.organizationId,
+        title: taskData.title,
       },
-      create: taskData,
     });
+
+    if (existingTask) {
+      await prisma.task.update({
+        where: { id: existingTask.id },
+        data: {
+          description: taskData.description,
+          status: taskData.status,
+        },
+      });
+    } else {
+      await prisma.task.create({
+        data: taskData,
+      });
+    }
   }
 
   console.log("✅ Database seeded successfully!");

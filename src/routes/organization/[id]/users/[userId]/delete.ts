@@ -16,18 +16,16 @@ export default async function deleteUserRoute(fastify: FastifyInstance) {
   fastify.delete(
     "/organizations/:id/users/:userId",
     {
-      onRequest: async (request, reply) => {
-        // Remove Content-Type header if body is empty to prevent JSON parsing error
-        if (!request.body || (typeof request.body === 'string' && request.body.length === 0)) {
-          delete request.headers['content-type'];
-        }
-      },
       preHandler: [fastify.authenticate],
       schema: {
         tags: ["organizations"],
         security: [{ bearerAuth: [] }],
         summary: "Remove user from organization (Admin only)",
         params: userOrganizationParamsSchema,
+        body: {
+          type: "object",
+          additionalProperties: true,
+        },
         response: {
           200: successResponseSchema,
           403: errorResponseSchema,

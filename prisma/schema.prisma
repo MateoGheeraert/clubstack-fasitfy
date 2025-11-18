@@ -8,7 +8,7 @@ datasource db {
 }
 
 model Organization {
-  id        String             @id @default(cuid())
+  id        String             @id @default(uuid()) @db.Uuid
   name      String             @unique
   createdAt DateTime           @default(now())
   updatedAt DateTime           @updatedAt
@@ -19,7 +19,7 @@ model Organization {
 }
 
 model User {
-  id            String             @id @default(cuid())
+  id            String             @id @default(uuid()) @db.Uuid
   email         String             @unique
   passwordHash  String
   createdAt     DateTime           @default(now())
@@ -30,7 +30,7 @@ model User {
 }
 
 model RefreshToken {
-  id        String   @id @default(cuid())
+  id        String   @id @default(uuid()) @db.Uuid
   token     String   @unique
   userId    String
   expiresAt DateTime
@@ -42,10 +42,10 @@ model RefreshToken {
 }
 
 model UserOrganization {
-  id             String       @id @default(cuid())
+  id             String       @id @default(uuid()) @db.Uuid
   userId         String
   organizationId String
-  role          Role          @default(USER)
+  role           Role         @default(USER)
   createdAt      DateTime     @default(now())
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -54,22 +54,22 @@ model UserOrganization {
 }
 
 model Task {
-  id          String   @id @default(cuid())
-  title       String
-  description String?
-  status      String   @default("pending")
-  userId      String
+  id             String       @id @default(uuid()) @db.Uuid
+  title          String
+  description    String?
+  status         String       @default("pending")
+  userId         String
   organizationId String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  user        User     @relation(fields: [userId], references: [id])
-  organization Organization @relation(fields: [organizationId], references: [id])
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  user           User         @relation(fields: [userId], references: [id])
+  organization   Organization @relation(fields: [organizationId], references: [id])
 
   @@index([userId])
 }
 
 model Account {
-  id             String        @id @default(cuid())
+  id             String        @id @default(uuid()) @db.Uuid
   organizationId String
   accountName    String
   balance        Float         @default(0.0)
@@ -81,7 +81,7 @@ model Account {
 }
 
 model Transaction {
-  id              String          @id @default(cuid())
+  id              String          @id @default(uuid()) @db.Uuid
   accountId       String
   amount          Float
   transactionType TransactionType
@@ -96,7 +96,7 @@ model Transaction {
 }
 
 model Activity {
-  id             String       @id @default(cuid())
+  id             String       @id @default(uuid()) @db.Uuid
   organizationId String
   title          String
   starts_at      DateTime
