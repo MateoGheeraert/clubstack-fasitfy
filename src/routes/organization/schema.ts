@@ -21,6 +21,22 @@ export const addUserToOrganizationSchema = {
   },
 } as const;
 
+export const addUserByEmailToOrganizationSchema = {
+  type: "object",
+  required: ["email"],
+  properties: {
+    email: { type: "string", format: "email" },
+  },
+} as const;
+
+export const updateUserRoleSchema = {
+  type: "object",
+  required: ["role"],
+  properties: {
+    role: { type: "string", enum: ["USER", "MODERATOR", "ADMIN"] },
+  },
+} as const;
+
 export const getOrganizationsQuerySchema = {
   type: "object",
   properties: {

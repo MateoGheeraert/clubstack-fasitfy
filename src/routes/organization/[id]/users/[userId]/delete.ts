@@ -16,6 +16,12 @@ export default async function deleteUserRoute(fastify: FastifyInstance) {
   fastify.delete(
     "/organizations/:id/users/:userId",
     {
+      onRequest: async (request, reply) => {
+        // Remove Content-Type header if body is empty to prevent JSON parsing error
+        if (!request.body || (typeof request.body === 'string' && request.body.length === 0)) {
+          delete request.headers['content-type'];
+        }
+      },
       preHandler: [fastify.authenticate],
       schema: {
         tags: ["organizations"],
@@ -26,6 +32,7 @@ export default async function deleteUserRoute(fastify: FastifyInstance) {
           200: successResponseSchema,
           403: errorResponseSchema,
           404: errorResponseSchema,
+          500: errorResponseSchema,
         },
       },
     },
@@ -41,6 +48,9 @@ export default async function deleteUserRoute(fastify: FastifyInstance) {
         );
         reply.send(result);
       } catch (error: any) {
+        // Log the error for debugging
+        fastify.log.error({ error, message: error.message }, 'Error removing user from organization');
+        
         if (error.message === "ORGANIZATION_NOT_FOUND") {
           return reply.code(404).send({ error: "Organization not found" });
         }
@@ -52,7 +62,11 @@ export default async function deleteUserRoute(fastify: FastifyInstance) {
         if (error.message === "UNAUTHORIZED") {
           return reply.code(403).send({ error: "Access denied" });
         }
-        throw error;
+        // Return a more detailed error for unhandled cases
+        return reply.code(500).send({ 
+          error: "Internal server error",
+          message: error.message 
+        });
       }
     }
   );

@@ -276,4 +276,124 @@ export class OrganizationService {
       role: uo.role,
     }));
   }
+
+  async getOrganizationUsers(organizationId: string, requesterId: string) {
+    // Check if requester has admin role in this organization
+    const requesterRole = await this.getUserRoleInOrganization(
+      requesterId,
+      organizationId
+    );
+    if (requesterRole !== "ADMIN") {
+      throw new Error("UNAUTHORIZED");
+    }
+
+    // Check if organization exists
+    await this.getOrganizationById(organizationId);
+
+    // Get all users in the organization
+    return this.prisma.userOrganization.findMany({
+      where: { organizationId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            createdAt: true,
+          },
+        },
+      },
+    });
+  }
+
+  async addUserToOrganizationByEmail(
+    organizationId: string,
+    email: string,
+    requesterId: string
+  ) {
+    // Check if requester has admin role in this organization
+    const requesterRole = await this.getUserRoleInOrganization(
+      requesterId,
+      organizationId
+    );
+    if (requesterRole !== "ADMIN") {
+      throw new Error("UNAUTHORIZED");
+    }
+
+    // Check if organization exists
+    await this.getOrganizationById(organizationId);
+
+    // Find user by email
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+    });
+    if (!user) {
+      throw new Error("USER_NOT_FOUND");
+    }
+
+    // Check if user is already in organization
+    const existingRelation = await this.prisma.userOrganization.findFirst({
+      where: {
+        organizationId,
+        userId: user.id,
+      },
+    });
+    if (existingRelation) {
+      throw new Error("USER_ALREADY_IN_ORGANIZATION");
+    }
+
+    return this.prisma.userOrganization.create({
+      data: {
+        organizationId,
+        userId: user.id,
+        role: "USER",
+      },
+    });
+  }
+
+  async updateUserRole(
+    organizationId: string,
+    userId: string,
+    role: Role,
+    requesterId: string
+  ) {
+    // Check if requester has admin role in this organization
+    const requesterRole = await this.getUserRoleInOrganization(
+      requesterId,
+      organizationId
+    );
+    if (requesterRole !== "ADMIN") {
+      throw new Error("UNAUTHORIZED");
+    }
+
+    // Prevent users from changing their own role
+    if (userId === requesterId) {
+      throw new Error("CANNOT_CHANGE_OWN_ROLE");
+    }
+
+    // Check if organization exists
+    await this.getOrganizationById(organizationId);
+
+    // Check if user exists in organization
+    const existingRelation = await this.prisma.userOrganization.findFirst({
+      where: {
+        organizationId,
+        userId,
+      },
+    });
+    if (!existingRelation) {
+      throw new Error("USER_NOT_IN_ORGANIZATION");
+    }
+
+    return this.prisma.userOrganization.update({
+      where: {
+        userId_organizationId: {
+          userId,
+          organizationId,
+        },
+      },
+      data: {
+        role,
+      },
+    });
+  }
 }
