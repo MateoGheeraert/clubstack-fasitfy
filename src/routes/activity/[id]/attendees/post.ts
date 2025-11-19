@@ -9,15 +9,16 @@ import {
 export default async function postAttendeesRoute(fastify: FastifyInstance) {
   const activityService = new ActivityService(fastify.prisma);
 
-  // POST /activities/:id/attendees - Add attendee to activity (Admin only)
+  // POST /activities/:id/attendees - Add non-user attendee to activity (Admin/Moderator only)
   fastify.post(
     "/activities/:id/attendees",
     {
-      preHandler: [fastify.authenticate, fastify.authorize([Role.ADMIN])],
+      preHandler: [fastify.authenticate, fastify.authorize([Role.ADMIN, Role.MODERATOR])],
       schema: {
         tags: ["activities"],
         security: [{ bearerAuth: [] }],
-        summary: "Add attendee to activity (Admin only)",
+        summary: "Add non-user attendee to activity (Admin/Moderator only)",
+        description: "Add a non-user attendee (guest name) to an activity. For user attendees, users should use the join endpoint.",
         body: {
           type: "object",
           required: ["attendee"],

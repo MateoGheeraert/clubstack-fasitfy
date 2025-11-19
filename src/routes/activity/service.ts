@@ -41,8 +41,13 @@ export class ActivityService {
 
     return this.prisma.activity.create({
       data: {
-        ...data,
-        attendees: data.attendees || [],
+        organizationId: data.organizationId,
+        title: data.title,
+        starts_at: data.starts_at,
+        ends_at: data.ends_at,
+        location: data.location,
+        description: data.description,
+        nonUserAttendees: data.nonUserAttendees || [],
       },
       include: {
         organization: {
@@ -338,19 +343,19 @@ export class ActivityService {
   ) {
     const activity = await this.getActivityById(id, requesterId, requesterRole);
 
-    // Only admins can add attendees
-    if (requesterRole !== "ADMIN") {
+    // Only admins can add non-user attendees
+    if (requesterRole !== "ADMIN" && requesterRole !== "MODERATOR") {
       throw new Error("UNAUTHORIZED");
     }
 
-    if (activity.attendees.includes(attendee)) {
+    if (activity.nonUserAttendees.includes(attendee)) {
       throw new Error("ATTENDEE_ALREADY_EXISTS");
     }
 
     return this.prisma.activity.update({
       where: { id },
       data: {
-        attendees: {
+        nonUserAttendees: {
           push: attendee,
         },
       },
@@ -370,17 +375,17 @@ export class ActivityService {
   ) {
     const activity = await this.getActivityById(id, requesterId, requesterRole);
 
-    // Only admins can remove attendees
-    if (requesterRole !== "ADMIN") {
+    // Only admins can remove non-user attendees
+    if (requesterRole !== "ADMIN" && requesterRole !== "MODERATOR") {
       throw new Error("UNAUTHORIZED");
     }
 
-    const updatedAttendees = activity.attendees.filter((a) => a !== attendee);
+    const updatedAttendees = activity.nonUserAttendees.filter((a: string) => a !== attendee);
 
     return this.prisma.activity.update({
       where: { id },
       data: {
-        attendees: updatedAttendees,
+        nonUserAttendees: updatedAttendees,
       },
       include: {
         organization: {
@@ -388,5 +393,151 @@ export class ActivityService {
         },
       },
     });
+  }
+
+  async joinActivity(id: string, userId: string) {
+    // Check if activity exists
+    const activity = await this.prisma.activity.findUnique({
+      where: { id },
+      include: {
+        attendees: {
+          where: { id: userId },
+        },
+      },
+    });
+
+    if (!activity) {
+      throw new Error("ACTIVITY_NOT_FOUND");
+    }
+
+    // Check if user has access to this organization
+    const userOrganization = await this.prisma.userOrganization.findFirst({
+      where: {
+        userId,
+        organizationId: activity.organizationId,
+      },
+    });
+    if (!userOrganization) {
+      throw new Error("UNAUTHORIZED");
+    }
+
+    // Check if user is already attending
+    if (activity.attendees.length > 0) {
+      throw new Error("ALREADY_ATTENDING");
+    }
+
+    // Add user to activity attendees
+    return this.prisma.activity.update({
+      where: { id },
+      data: {
+        attendees: {
+          connect: { id: userId },
+        },
+      },
+      include: {
+        organization: {
+          select: { id: true, name: true },
+        },
+        attendees: {
+          select: {
+            id: true,
+            email: true,
+          },
+        },
+      },
+    });
+  }
+
+  async leaveActivity(id: string, userId: string) {
+    // Check if activity exists
+    const activity = await this.prisma.activity.findUnique({
+      where: { id },
+      include: {
+        attendees: {
+          where: { id: userId },
+        },
+      },
+    });
+
+    if (!activity) {
+      throw new Error("ACTIVITY_NOT_FOUND");
+    }
+
+    // Check if user is actually attending
+    if (activity.attendees.length === 0) {
+      throw new Error("NOT_ATTENDING");
+    }
+
+    // Remove user from activity attendees
+    return this.prisma.activity.update({
+      where: { id },
+      data: {
+        attendees: {
+          disconnect: { id: userId },
+        },
+      },
+      include: {
+        organization: {
+          select: { id: true, name: true },
+        },
+        attendees: {
+          select: {
+            id: true,
+            email: true,
+          },
+        },
+      },
+    });
+  }
+
+  async getActivityAttendees(
+    id: string,
+    requesterId: string,
+    requesterRole: Role
+  ) {
+    // Check if activity exists
+    const activity = await this.prisma.activity.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        organizationId: true,
+      },
+    });
+
+    if (!activity) {
+      throw new Error("ACTIVITY_NOT_FOUND");
+    }
+
+    // Check if user is admin/moderator of the organization
+    const userOrganization = await this.prisma.userOrganization.findFirst({
+      where: {
+        userId: requesterId,
+        organizationId: activity.organizationId,
+      },
+    });
+
+    if (!userOrganization) {
+      throw new Error("UNAUTHORIZED");
+    }
+
+    if (userOrganization.role !== "ADMIN" && userOrganization.role !== "MODERATOR") {
+      throw new Error("UNAUTHORIZED");
+    }
+
+    // Get all attendees
+    const activityWithAttendees = await this.prisma.activity.findUnique({
+      where: { id },
+      include: {
+        attendees: {
+          select: {
+            id: true,
+            email: true,
+            createdAt: true,
+          },
+        },
+      },
+    });
+
+    return activityWithAttendees?.attendees || [];
   }
 }

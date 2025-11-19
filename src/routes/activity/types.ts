@@ -1,7 +1,12 @@
-import { Activity, Organization } from "@prisma/client";
+import { Activity, Organization, User } from "@prisma/client";
 
 export type ActivityWithOrganization = Activity & {
   organization: Pick<Organization, "id" | "name">;
+};
+
+export type ActivityWithOrganizationAndAttendees = Activity & {
+  organization: Pick<Organization, "id" | "name">;
+  attendees: Pick<User, "id" | "email">[];
 };
 
 export type CreateActivityInput = {
@@ -11,7 +16,7 @@ export type CreateActivityInput = {
   ends_at: Date;
   location?: string;
   description?: string;
-  attendees?: string[];
+  nonUserAttendees?: string[];
 };
 
 export type UpdateActivityInput = {
@@ -20,7 +25,7 @@ export type UpdateActivityInput = {
   ends_at?: Date;
   location?: string;
   description?: string;
-  attendees?: string[];
+  nonUserAttendees?: string[];
 };
 
 export type ActivityFilters = {
@@ -42,3 +47,5 @@ export type ActivitiesResponse = {
     totalPages: number;
   };
 };
+
+export type AttendeeResponse = Pick<User, "id" | "email" | "createdAt">;

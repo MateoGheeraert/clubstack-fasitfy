@@ -172,7 +172,8 @@ async function main() {
       ends_at: new Date("2025-10-10T21:00:00Z"),
       location: "Gemeentezaal Merkem",
       description: "Bespreking van de activiteiten voor de komende maand.",
-      attendees: ["mateo@gmail.com", "simon@gmail.com", "mathias@gmail.com"],
+      attendeeEmails: ["mateo@gmail.com", "simon@gmail.com", "mathias@gmail.com"],
+      nonUserAttendees: [],
     },
     {
       organizationId: createdOrgs[1].id,
@@ -181,7 +182,8 @@ async function main() {
       ends_at: new Date("2025-10-12T20:00:00Z"),
       location: "Sportveld Merkem",
       description: "Wekelijkse training voor het team.",
-      attendees: ["mateo@gmail.com", "thomas@gmail.com", "lucas@gmail.com"],
+      attendeeEmails: ["mateo@gmail.com", "thomas@gmail.com", "lucas@gmail.com"],
+      nonUserAttendees: [],
     },
   ];
 
@@ -194,6 +196,16 @@ async function main() {
       },
     });
 
+    // Get user IDs from emails
+    const attendeeUsers = await prisma.user.findMany({
+      where: {
+        email: {
+          in: activityData.attendeeEmails,
+        },
+      },
+      select: { id: true },
+    });
+
     if (existingActivity) {
       await prisma.activity.update({
         where: { id: existingActivity.id },
@@ -202,12 +214,26 @@ async function main() {
           ends_at: activityData.ends_at,
           location: activityData.location,
           description: activityData.description,
-          attendees: activityData.attendees,
+          nonUserAttendees: activityData.nonUserAttendees,
+          attendees: {
+            set: attendeeUsers.map((u) => ({ id: u.id })),
+          },
         },
       });
     } else {
       await prisma.activity.create({
-        data: activityData,
+        data: {
+          organizationId: activityData.organizationId,
+          title: activityData.title,
+          starts_at: activityData.starts_at,
+          ends_at: activityData.ends_at,
+          location: activityData.location,
+          description: activityData.description,
+          nonUserAttendees: activityData.nonUserAttendees,
+          attendees: {
+            connect: attendeeUsers.map((u) => ({ id: u.id })),
+          },
+        },
       });
     }
   }

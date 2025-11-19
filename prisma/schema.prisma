@@ -26,13 +26,14 @@ model User {
   updatedAt     DateTime           @updatedAt
   Task          Task[]
   organizations UserOrganization[]
+  activities    Activity[]
   refreshTokens RefreshToken[]
 }
 
 model RefreshToken {
   id        String   @id @default(uuid()) @db.Uuid
   token     String   @unique
-  userId    String
+  userId    String   @db.Uuid
   expiresAt DateTime
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -43,8 +44,8 @@ model RefreshToken {
 
 model UserOrganization {
   id             String       @id @default(uuid()) @db.Uuid
-  userId         String
-  organizationId String
+  userId         String       @db.Uuid
+  organizationId String       @db.Uuid
   role           Role         @default(USER)
   createdAt      DateTime     @default(now())
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
@@ -58,8 +59,8 @@ model Task {
   title          String
   description    String?
   status         String       @default("pending")
-  userId         String
-  organizationId String
+  userId         String       @db.Uuid
+  organizationId String       @db.Uuid
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
   user           User         @relation(fields: [userId], references: [id])
@@ -70,7 +71,7 @@ model Task {
 
 model Account {
   id             String        @id @default(uuid()) @db.Uuid
-  organizationId String
+  organizationId String        @db.Uuid
   accountName    String
   balance        Float         @default(0.0)
   type           String
@@ -82,7 +83,7 @@ model Account {
 
 model Transaction {
   id              String          @id @default(uuid()) @db.Uuid
-  accountId       String
+  accountId       String          @db.Uuid
   amount          Float
   transactionType TransactionType
   description     String?
@@ -96,17 +97,18 @@ model Transaction {
 }
 
 model Activity {
-  id             String       @id @default(uuid()) @db.Uuid
-  organizationId String
-  title          String
-  starts_at      DateTime
-  ends_at        DateTime
-  location       String?
-  description    String?
-  attendees      String[]     @default([])
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  organization   Organization @relation(fields: [organizationId], references: [id])
+  id               String       @id @default(uuid()) @db.Uuid
+  organizationId   String       @db.Uuid
+  title            String
+  starts_at        DateTime
+  ends_at          DateTime
+  location         String?
+  description      String?
+  nonUserAttendees String[]
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  organization     Organization @relation(fields: [organizationId], references: [id])
+  attendees        User[]
 }
 
 enum Role {

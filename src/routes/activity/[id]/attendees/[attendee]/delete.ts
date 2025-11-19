@@ -8,15 +8,16 @@ import {
 export default async function deleteAttendeeRoute(fastify: FastifyInstance) {
   const activityService = new ActivityService(fastify.prisma);
 
-  // DELETE /activities/:id/attendees/:attendee - Remove attendee from activity (Admin only)
+  // DELETE /activities/:id/attendees/:attendee - Remove non-user attendee from activity (Admin/Moderator only)
   fastify.delete(
     "/activities/:id/attendees/:attendee",
     {
-      preHandler: [fastify.authenticate, fastify.authorize([Role.ADMIN])],
+      preHandler: [fastify.authenticate, fastify.authorize([Role.ADMIN, Role.MODERATOR])],
       schema: {
         tags: ["activities"],
         security: [{ bearerAuth: [] }],
-        summary: "Remove attendee from activity (Admin only)",
+        summary: "Remove non-user attendee from activity (Admin/Moderator only)",
+        description: "Remove a non-user attendee (guest name) from an activity. For user attendees, users should use the leave endpoint.",
         params: {
           type: "object",
           required: ["id", "attendee"],

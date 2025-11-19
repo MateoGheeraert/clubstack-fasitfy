@@ -8,7 +8,7 @@ export const createActivitySchema = {
     ends_at: { type: "string", format: "date-time" },
     location: { type: "string", maxLength: 255 },
     description: { type: "string", maxLength: 1000 },
-    attendees: {
+    nonUserAttendees: {
       type: "array",
       items: { type: "string" },
       maxItems: 100,
@@ -24,7 +24,7 @@ export const updateActivitySchema = {
     ends_at: { type: "string", format: "date-time" },
     location: { type: "string", maxLength: 255 },
     description: { type: "string", maxLength: 1000 },
-    attendees: {
+    nonUserAttendees: {
       type: "array",
       items: { type: "string" },
       maxItems: 100,
@@ -118,5 +118,26 @@ export const errorResponseSchema = {
   type: "object",
   properties: {
     error: { type: "string" },
+  },
+} as const;
+
+export const attendeeResponseSchema = {
+  type: "object",
+  properties: {
+    id: { type: "string" },
+    email: { type: "string" },
+    createdAt: { type: "string", format: "date-time" },
+  },
+} as const;
+
+export const attendeesResponseSchema = {
+  type: "array",
+  items: attendeeResponseSchema,
+} as const;
+
+export const successResponseSchema = {
+  type: "object",
+  properties: {
+    message: { type: "string" },
   },
 } as const;
